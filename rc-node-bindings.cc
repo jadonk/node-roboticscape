@@ -1,10 +1,28 @@
 #include <nan.h>
+#include <functional>
 
 extern "C" {
     #include <string.h>
     #include <uv.h>
     #include <roboticscape.h>
 }
+
+typedef void (*void_fp)();
+
+template <typename T>
+struct Callback;
+
+template <typename Ret, typename... Params>
+struct Callback<Ret(Params...)> {
+    template <typename... Args>
+    static Ret callback(Args... args) { return func(args...); }
+    static std::function<Ret(Params...)> func;
+};
+
+// Initialize the static member.
+template <typename Ret, typename... Params>
+std::function<Ret(Params...)> Callback<Ret(Params...)>::func;
+
 
 namespace rc {
     void RCinitialize(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -63,6 +81,13 @@ namespace rc {
         void handler() {
             uv_async_send(&async);
         }
+        template<typename T>
+        void_fp getHandler(void (T::*method)(), T* r) {
+            Callback<void()>::func = std::bind(method, r);
+            void (*c_function_pointer)() = 
+                static_cast<decltype(c_function_pointer)>(Callback<void()>::callback);
+            return c_function_pointer;
+        }
     };
     
     static void doHandoff(uv_async_t* handle) {
@@ -84,11 +109,13 @@ namespace rc {
         }
         Handoff *h = new Handoff;
         h->async.data = h;
+
         //h->cb = v8::Persistent<v8::Function>::New(v8::Isolate::GetCurrent(), 
         //    &(info[0].As<v8::Function>()));
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &(h->async), doHandoff);
-        //rc_set_pause_pressed_func(&(h->handler));
+        void_fp fp = h->getHandler(&Handoff::handler, h);
+        rc_set_pause_pressed_func(fp);
     }
     
     void ModuleInit(v8::Local<v8::Object> exports) {
