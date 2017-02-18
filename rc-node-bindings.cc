@@ -77,7 +77,10 @@ namespace rc {
     
     struct Handoff {
         uv_async_t async;
-        v8::Persistent<v8::Function> cb;
+        Nan::Callback cb;
+        void setCallback(v8::Local<v8::Function> fn) {
+            cb(fn);
+        }
         void handler() {
             uv_async_send(&async);
         }
@@ -92,10 +95,7 @@ namespace rc {
     
     static void doHandoff(uv_async_t* handle) {
         Handoff *h = static_cast<Handoff *>(handle->data);
-        const unsigned argc = 0;
-        v8::Local<v8::Value> argv[argc] = { };
-        v8::Local<v8::Function> cb = v8::Local<v8::Function>::New(v8::Isolate::GetCurrent(), h->cb);
-        Nan::MakeCallback(Nan::GetCurrentContext()->Global(), cb, argc, argv);
+        h->cb.Call(0, 0);
     }
 
     void RCsetPausePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -107,11 +107,10 @@ namespace rc {
             Nan::ThrowTypeError("Wrong type (should be function)");
             return;
         }
-        Handoff *h = new Handoff;
+        v8::Local<v8::Function> cb = info[0].As<v8::Function>();
+        Handoff *h = new Handoff();
         h->async.data = h;
-
-        //h->cb = v8::Persistent<v8::Function>::New(v8::Isolate::GetCurrent(), 
-        //    &(info[0].As<v8::Function>()));
+        h->setCallback(cb);
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &(h->async), doHandoff);
         void_fp fp = h->getHandler(&Handoff::handler, h);
