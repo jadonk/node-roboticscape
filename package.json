@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/jadonk/node-roboticscape/issues"
   },
-  "homepage": "https://github.com/jadonk/node-roboticscape#readme"
+  "homepage": "https://github.com/jadonk/node-roboticscape/blob/master/README.md",
+  "dependencies": {
+    "nan": "2.5.1"
+  }
 }

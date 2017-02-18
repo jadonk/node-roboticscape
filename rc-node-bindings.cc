@@ -1,77 +1,107 @@
-#include <node.h>
+#include <nan.h>
 
 extern "C" {
-    #include <stdio.h>
     #include <string.h>
+    #include <uv.h>
     #include <roboticscape.h>
 }
 
 namespace rc {
-    void RCinitialize(const v8::FunctionCallbackInfo<v8::Value>& args) {
-        v8::Isolate* isolate = args.GetIsolate();
-        bool i = (bool)rc_initialize();
-        args.GetReturnValue().Set(v8::Boolean::New(isolate, i));
+    void RCinitialize(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        v8::Local<v8::Boolean> i = Nan::New((bool)rc_initialize());
+        info.GetReturnValue().Set(i);
     }
     
     static void RCexit(void*) {
         rc_cleanup();
     }
 
-    void RCgetState(const v8::FunctionCallbackInfo<v8::Value>& args) {
-        v8::Isolate* isolate = args.GetIsolate();
+    void RCgetState(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         rc_state_t s = rc_get_state();
         switch(s) {
 	    case RUNNING:
-            args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "RUNNING"));
+            info.GetReturnValue().Set(Nan::New("RUNNING").ToLocalChecked());
             break;
 	    case PAUSED:
-            args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "PAUSED"));
+            info.GetReturnValue().Set(Nan::New("PAUSED").ToLocalChecked());
             break;
 	    case EXITING:
-            args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "EXITING"));
+            info.GetReturnValue().Set(Nan::New("EXITING").ToLocalChecked());
             break;
         case UNINITIALIZED:
         default:
-            args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "UNINITIALIZED"));
+            info.GetReturnValue().Set(Nan::New("UNINITIALIZED").ToLocalChecked());
             break;
         }
     }
 
-    void RCsetState(const v8::FunctionCallbackInfo<v8::Value>& args) {
-        v8::Isolate* isolate = args.GetIsolate();
-        if (args.Length() != 1) {
-            isolate->ThrowException(v8::Exception::TypeError(
-                v8::String::NewFromUtf8(isolate, 
-                    "must be only 1 argument")));
+    void RCsetState(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() != 1) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
             return;
         }
-        if (!args[0]->IsString()) {
-            isolate->ThrowException(v8::Exception::TypeError(
-                v8::String::NewFromUtf8(isolate,
-                    "argument must be a string")));
+        if (!info[0]->IsString()) {
+            Nan::ThrowTypeError("Wrong type (should be string)");
             return;
         }
-        v8::String::Utf8Value str(args[0]->ToString());
+        v8::String::Utf8Value str(info[0]->ToString());
         char * s = (char *)*str;
         if(!strcmp(s, "RUNNING")) rc_set_state(RUNNING);
         else if(!strcmp(s, "PAUSED")) rc_set_state(PAUSED);
         else if(!strcmp(s, "EXITING")) rc_set_state(EXITING);
         else if(!strcmp(s, "UNINITIALIZED")) rc_set_state(UNINITIALIZED);
         else {
-            isolate->ThrowException(v8::Exception::TypeError(
-                v8::String::NewFromUtf8(isolate,
-                    "argument must be a one of 'RUNNING', "\
-                    "'PAUSED', 'EXITING', or 'UNINITIALIZED'")));
+            Nan::ThrowTypeError("Wrong value (should be 'RUNNING', "\
+                    "'PAUSED', 'EXITING', or 'UNINITIALIZED'");
             return;
         }
     }
-        
-    void module_init(v8::Local<v8::Object> exports) {
-        NODE_SET_METHOD(exports, "initialize", RCinitialize);
-        NODE_SET_METHOD(exports, "get_state", RCgetState);
-        NODE_SET_METHOD(exports, "set_state", RCsetState);
+    
+    struct Handoff {
+        uv_async_t async;
+        v8::Persistent<v8::Function> cb;
+        void handler() {
+            uv_async_send(&async);
+        }
+    };
+    
+    static void doHandoff(uv_async_t* handle) {
+        Handoff *h = static_cast<Handoff *>(handle->data);
+        const unsigned argc = 0;
+        v8::Local<v8::Value> argv[argc] = { };
+        v8::Local<v8::Function> cb = v8::Local<v8::Function>::New(v8::Isolate::GetCurrent(), h->cb);
+        Nan::MakeCallback(Nan::GetCurrentContext()->Global(), cb, argc, argv);
+    }
+
+    void RCsetPausePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() != 1) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
+            return;
+        }
+        if (!info[0]->IsFunction()) {
+            Nan::ThrowTypeError("Wrong type (should be function)");
+            return;
+        }
+        Handoff *h = new Handoff;
+        h->async.data = h;
+        //h->cb = v8::Persistent<v8::Function>::New(v8::Isolate::GetCurrent(), 
+        //    &(info[0].As<v8::Function>()));
+        uv_loop_t *loop = uv_default_loop();
+        uv_async_init(loop, &(h->async), doHandoff);
+        //rc_set_pause_pressed_func(&(h->handler));
+    }
+    
+    void ModuleInit(v8::Local<v8::Object> exports) {
+        exports->Set(Nan::New("initialize").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCinitialize)->GetFunction());
+        exports->Set(Nan::New("get_state").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCgetState)->GetFunction());
+        exports->Set(Nan::New("set_state").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCsetState)->GetFunction());
+        exports->Set(Nan::New("set_pause_pressed_func").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCsetPausePressed)->GetFunction());
         node::AtExit(RCexit);
     }
 
-    NODE_MODULE(roboticscape, module_init);
+    NODE_MODULE(roboticscape, ModuleInit);
 }   // namespace rc
