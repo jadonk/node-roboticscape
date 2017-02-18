@@ -2,6 +2,7 @@
 #include <functional>
 
 extern "C" {
+    #include <stdio.h>
     #include <string.h>
     #include <uv.h>
     #include <roboticscape.h>
@@ -95,7 +96,9 @@ namespace rc {
     
     static void doHandoff(uv_async_t* handle) {
         Handoff *h = static_cast<Handoff *>(handle->data);
-        h->cb.Call(0, 0);
+        fprintf(stderr, "Got here!\n");
+        fflush(stderr);
+        //h->cb.Call(0, 0);
     }
 
     void RCsetPausePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -107,13 +110,14 @@ namespace rc {
             Nan::ThrowTypeError("Wrong type (should be function)");
             return;
         }
-        v8::Local<v8::Function> cb = info[0].As<v8::Function>();
+        v8::Local<v8::Function> fn = info[0].As<v8::Function>();
         Handoff *h = new Handoff();
         h->async.data = h;
-        h->setCallback(cb);
+        //h->cb(fn);
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &(h->async), doHandoff);
         void_fp fp = h->getHandler(&Handoff::handler, h);
+        fp();
         rc_set_pause_pressed_func(fp);
     }
     
