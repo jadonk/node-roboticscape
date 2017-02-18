@@ -1,0 +1,23 @@
+{
+  "name": "roboticscape",
+  "version": "0.0.1",
+  "description": "Node.js bindings for libroboticscape for BeagleBoard.org BeagleBone Blue or Robotics Cape",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jadonk/node-roboticscape.git"
+  },
+  "keywords": [
+    "robotics",
+    "beaglebone"
+  ],
+  "author": "Jason Kridner",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jadonk/node-roboticscape/issues"
+  },
+  "homepage": "https://github.com/jadonk/node-roboticscape#readme"
+}
