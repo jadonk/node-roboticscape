@@ -10,7 +10,10 @@ rc.set_state("RUNNING");
 assert.equal(rc.get_state(), "RUNNING");
 
 rc.set_pause_pressed_func(onPausePressed);
-console.log("Press PAUse button now")
+rc.set_pause_released_func(onPauseReleased);
+rc.set_mode_pressed_func(onModePressed);
+rc.set_mode_released_func(onModeReleased);
+console.log("Press buttons now")
 setTimeout(onTimeout, 5000);
 
 function onTimeout() {
@@ -28,5 +31,17 @@ function readRCpid(err, data) {
 }
 
 function onPausePressed() {
-    console.log("PAUse button pressed")
+    console.log("Pause button pressed");
+}
+
+function onPauseReleased() {
+    console.log("Pause button released");
+}
+
+function onModePressed() {
+    console.log("Mode button pressed");
+}
+
+function onModeReleased() {
+    console.log("Mode button released");
 }

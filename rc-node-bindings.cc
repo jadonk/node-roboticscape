@@ -79,9 +79,6 @@ namespace rc {
     struct Handoff {
         uv_async_t async;
         Nan::Callback cb;
-        void setCallback(v8::Local<v8::Function> fn) {
-            cb(fn);
-        }
         void handler() {
             uv_async_send(&async);
         }
@@ -97,8 +94,6 @@ namespace rc {
     static void doHandoff(uv_async_t* handle) {
         Nan::HandleScope scope;
         Handoff *h = static_cast<Handoff *>(handle->data);
-        fprintf(stderr, "Got here!\n");
-        fflush(stderr);
         h->cb.Call(0, 0);
     }
 
@@ -118,8 +113,64 @@ namespace rc {
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &(h->async), doHandoff);
         void_fp fp = h->getHandler(&Handoff::handler, h);
-        fp();
         rc_set_pause_pressed_func(fp);
+    }
+    
+    void RCsetPauseReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() != 1) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
+            return;
+        }
+        if (!info[0]->IsFunction()) {
+            Nan::ThrowTypeError("Wrong type (should be function)");
+            return;
+        }
+        v8::Local<v8::Function> fn = info[0].As<v8::Function>();
+        Handoff *h = new Handoff();
+        h->async.data = h;
+        h->cb.SetFunction(fn);
+        uv_loop_t *loop = uv_default_loop();
+        uv_async_init(loop, &(h->async), doHandoff);
+        void_fp fp = h->getHandler(&Handoff::handler, h);
+        rc_set_pause_released_func(fp);
+    }
+    
+    void RCsetModePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() != 1) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
+            return;
+        }
+        if (!info[0]->IsFunction()) {
+            Nan::ThrowTypeError("Wrong type (should be function)");
+            return;
+        }
+        v8::Local<v8::Function> fn = info[0].As<v8::Function>();
+        Handoff *h = new Handoff();
+        h->async.data = h;
+        h->cb.SetFunction(fn);
+        uv_loop_t *loop = uv_default_loop();
+        uv_async_init(loop, &(h->async), doHandoff);
+        void_fp fp = h->getHandler(&Handoff::handler, h);
+        rc_set_mode_pressed_func(fp);
+    }
+    
+    void RCsetModeReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() != 1) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
+            return;
+        }
+        if (!info[0]->IsFunction()) {
+            Nan::ThrowTypeError("Wrong type (should be function)");
+            return;
+        }
+        v8::Local<v8::Function> fn = info[0].As<v8::Function>();
+        Handoff *h = new Handoff();
+        h->async.data = h;
+        h->cb.SetFunction(fn);
+        uv_loop_t *loop = uv_default_loop();
+        uv_async_init(loop, &(h->async), doHandoff);
+        void_fp fp = h->getHandler(&Handoff::handler, h);
+        rc_set_mode_released_func(fp);
     }
     
     void ModuleInit(v8::Local<v8::Object> exports) {
@@ -131,6 +182,12 @@ namespace rc {
             Nan::New<v8::FunctionTemplate>(RCsetState)->GetFunction());
         exports->Set(Nan::New("set_pause_pressed_func").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCsetPausePressed)->GetFunction());
+        exports->Set(Nan::New("set_pause_released_func").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCsetPauseReleased)->GetFunction());
+        exports->Set(Nan::New("set_mode_pressed_func").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCsetModePressed)->GetFunction());
+        exports->Set(Nan::New("set_mode_released_func").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCsetModeReleased)->GetFunction());
         node::AtExit(RCexit);
     }
 
