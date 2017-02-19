@@ -95,10 +95,11 @@ namespace rc {
     };
     
     static void doHandoff(uv_async_t* handle) {
+        Nan::HandleScope scope;
         Handoff *h = static_cast<Handoff *>(handle->data);
         fprintf(stderr, "Got here!\n");
         fflush(stderr);
-        //h->cb.Call(0, 0);
+        h->cb.Call(0, 0);
     }
 
     void RCsetPausePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -113,7 +114,7 @@ namespace rc {
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
         Handoff *h = new Handoff();
         h->async.data = h;
-        //h->cb(fn);
+        h->cb.SetFunction(fn);
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &(h->async), doHandoff);
         void_fp fp = h->getHandler(&Handoff::handler, h);
