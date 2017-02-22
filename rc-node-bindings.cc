@@ -102,61 +102,21 @@ namespace rc {
     }
     
     struct Handoff {
-        Handoff() {
-        };
-        Handoff(const Handoff& other) {
-            std::swap(async, (uv_async_t &)other.async);
-            cb.SetFunction(other.cb.GetFunction());
-        };
-        Handoff& operator=(Handoff other)
-        {
-            std::swap(async, other.async);
-            cb.SetFunction(other.cb.GetFunction());
-            return *this;
-        }
-        Handoff& operator=(const Handoff &other)
-        {
-            std::swap(async, (uv_async_t &)other.async);
-            cb.SetFunction(other.cb.GetFunction());
-            return *this;
-        }
-        uv_async_t async;
         Nan::Callback cb;
-        void handler() {
-            uv_async_send(&async);
-        }
-
-        /*
-        auto lambdaHandler() {
-            auto lambda = [=]() {
-                handler();
-            };
-            return lambda_expression<decltype(lambda), void>(lambda);
-        }
-        void_fp getHandler() {
-            return (void_fp) std::mem_fn(&Handoff::handler);
-        }
-        void_fp getHandler() {
-            std::function<void()>::func callback = std::bind(method, this);
-            void (*c_function_pointer)() = 
-                static_cast<decltype(c_function_pointer)>(Callback<void()>::callback);
-            fprintf(stderr, "getHandler: %p, %p, %p\n",
-                (void *)method, (void *)this, (void *)c_function_pointer);
-            fflush(stderr);
-            return c_function_pointer;
-        }
-        */
     };
     
     static void doHandoff(uv_async_t* handle) {
         Nan::HandleScope scope;
-        fprintf(stderr, "doHandoff: %p\n", (void *)handle);
-        fflush(stderr);
         Handoff *h = static_cast<Handoff *>(handle->data);
         h->cb.Call(0, 0);
     }
 
     Handoff handoffPausePressed;
+    uv_async_t pausePressedSync;
+    
+    void handoffPausePressedSync() {
+        uv_async_send(&pausePressedSync);
+    }
 
     void RCsetPausePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         if (info.Length() != 1) {
@@ -168,21 +128,20 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        handoffPausePressed.async.data = &handoffPausePressed;
         handoffPausePressed.cb.SetFunction(fn);
+        pausePressedSync.data = &handoffPausePressed;
         uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &(handoffPausePressed.async), doHandoff);
-        //auto fp = [&] { h->handler(); };
-        std::function<void()> f_handler = std::bind(&Handoff::handler,
-            handoffPausePressed);
-        void_fp * fp = f_handler.target<void_fp>();
-        fprintf(stderr, "RCsetPausePressed: %p, %p\n", 
-            (void *)&handoffPausePressed, (void *)fp);
-        fflush(stderr);
-        rc_set_pause_pressed_func(*fp);
+        uv_async_init(loop, &pausePressedSync, doHandoff);
+        rc_set_pause_pressed_func(handoffPausePressedSync);
     }
+
+    Handoff handoffPauseReleased;
+    uv_async_t pauseReleasedSync;
     
-    /*
+    void handoffPauseReleasedSync() {
+        uv_async_send(&pauseReleasedSync);
+    }
+
     void RCsetPauseReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
@@ -193,18 +152,20 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        Handoff *h = new Handoff(fn);
-        fprintf(stderr, "RCsetPauseReleased: %p\n", (void *)h);
-        fflush(stderr);
-        h->async.data = h;
-        h->cb.SetFunction(fn);
+        handoffPauseReleased.cb.SetFunction(fn);
+        pauseReleasedSync.data = &handoffPauseReleased;
         uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &(h->async), doHandoff);
-        std::function<void()> f_handler = std::bind(&Handoff::handler, h);
-        void_fp * fp = f_handler.target<void_fp>();
-        rc_set_pause_released_func(*fp);
+        uv_async_init(loop, &pauseReleasedSync, doHandoff);
+        rc_set_pause_released_func(handoffPauseReleasedSync);
     }
+
+    Handoff handoffModePressed;
+    uv_async_t modePressedSync;
     
+    void handoffModePressedSync() {
+        uv_async_send(&modePressedSync);
+    }
+
     void RCsetModePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
@@ -215,18 +176,20 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        Handoff *h = new Handoff(fn);
-        fprintf(stderr, "RCsetModePressed: %p\n", (void *)h);
-        fflush(stderr);
-        h->async.data = h;
-        h->cb.SetFunction(fn);
+        handoffModePressed.cb.SetFunction(fn);
+        modePressedSync.data = &handoffModePressed;
         uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &(h->async), doHandoff);
-        std::function<void()> f_handler = std::bind(&Handoff::handler, h);
-        void_fp * fp = f_handler.target<void_fp>();
-        rc_set_mode_pressed_func(*fp);
+        uv_async_init(loop, &modePressedSync, doHandoff);
+        rc_set_mode_pressed_func(handoffModePressedSync);
     }
+
+    Handoff handoffModeReleased;
+    uv_async_t modeReleasedSync;
     
+    void handoffModeReleasedSync() {
+        uv_async_send(&modeReleasedSync);
+    }
+
     void RCsetModeReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
@@ -237,18 +200,12 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        Handoff *h = new Handoff(fn);
-        fprintf(stderr, "RCsetModeReleased: %p\n", (void *)h);
-        fflush(stderr);
-        h->async.data = h;
-        h->cb.SetFunction(fn);
+        handoffModeReleased.cb.SetFunction(fn);
+        pauseReleasedSync.data = &handoffModeReleased;
         uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &(h->async), doHandoff);
-        std::function<void()> f_handler = std::bind(&Handoff::handler, h);
-        void_fp * fp = f_handler.target<void_fp>();
-        rc_set_mode_released_func(*fp);
+        uv_async_init(loop, &modeReleasedSync, doHandoff);
+        rc_set_mode_released_func(handoffModeReleasedSync);
     }
-    */
 
     void ModuleInit(v8::Local<v8::Object> exports) {
         exports->Set(Nan::New("initialize").ToLocalChecked(),
@@ -259,14 +216,12 @@ namespace rc {
             Nan::New<v8::FunctionTemplate>(RCsetState)->GetFunction());
         exports->Set(Nan::New("set_pause_pressed_func").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCsetPausePressed)->GetFunction());
-            /*
         exports->Set(Nan::New("set_pause_released_func").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCsetPauseReleased)->GetFunction());
         exports->Set(Nan::New("set_mode_pressed_func").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCsetModePressed)->GetFunction());
         exports->Set(Nan::New("set_mode_released_func").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCsetModeReleased)->GetFunction());
-            */
         node::AtExit(RCexit);
     }
 
