@@ -10,20 +10,45 @@ extern "C" {
 
 typedef void (*void_fp)();
 
-template <typename T>
-struct Callback;
+/*
+template<typename TCallable>
+struct Wrapper
+{
+    typedef Wrapper<TCallable> Self;
 
-template <typename Ret, typename... Params>
-struct Callback<Ret(Params...)> {
-    template <typename... Args>
-    static Ret callback(Args... args) { return func(args...); }
-    static std::function<Ret(Params...)> func;
+    TCallable function;
+
+    Wrapper(TCallable const & function)
+    : function(function)
+    {
+        // Nothing else
+    }
+
+    static void call()
+    {
+        Self * wrapper = reinterpret_cast<Self * >();
+        wrapper->function();
+    }
 };
 
-// Initialize the static member.
-template <typename Ret, typename... Params>
-std::function<Ret(Params...)> Callback<Ret(Params...)>::func;
+typedef Wrapper<std::function<void()>> MyWrapper;
+*/
 
+// OT => Object Type
+// RT => Return Type
+// A ... => Arguments
+template<typename OT, typename RT, typename ... A>
+struct lambda_expression {
+    OT _object;
+    RT(OT::*_function)(A...)const;
+
+    lambda_expression(const OT & object)
+        : _object(object), _function(&decltype(_object)::operator()) {}
+
+    RT operator() (A ... args) const {
+        return (_object.*_function)(args...);
+    }
+};
 
 namespace rc {
     void RCinitialize(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -77,24 +102,20 @@ namespace rc {
     }
     
     struct Handoff {
-        uv_async_t async;
         Nan::Callback cb;
-        void handler() {
-            uv_async_send(&async);
-        }
-        template<typename T>
-        void_fp getHandler(void (T::*method)(), T* r) {
-            Callback<void()>::func = std::bind(method, r);
-            void (*c_function_pointer)() = 
-                static_cast<decltype(c_function_pointer)>(Callback<void()>::callback);
-            return c_function_pointer;
-        }
     };
     
     static void doHandoff(uv_async_t* handle) {
         Nan::HandleScope scope;
         Handoff *h = static_cast<Handoff *>(handle->data);
         h->cb.Call(0, 0);
+    }
+
+    Handoff handoffPausePressed;
+    uv_async_t pausePressedSync;
+    
+    void handoffPausePressedSync() {
+        uv_async_send(&pausePressedSync);
     }
 
     void RCsetPausePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -107,15 +128,20 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        Handoff *h = new Handoff();
-        h->async.data = h;
-        h->cb.SetFunction(fn);
+        handoffPausePressed.cb.SetFunction(fn);
+        pausePressedSync.data = &handoffPausePressed;
         uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &(h->async), doHandoff);
-        void_fp fp = h->getHandler(&Handoff::handler, h);
-        rc_set_pause_pressed_func(fp);
+        uv_async_init(loop, &pausePressedSync, doHandoff);
+        rc_set_pause_pressed_func(handoffPausePressedSync);
     }
+
+    Handoff handoffPauseReleased;
+    uv_async_t pauseReleasedSync;
     
+    void handoffPauseReleasedSync() {
+        uv_async_send(&pauseReleasedSync);
+    }
+
     void RCsetPauseReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
@@ -126,15 +152,20 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        Handoff *h = new Handoff();
-        h->async.data = h;
-        h->cb.SetFunction(fn);
+        handoffPauseReleased.cb.SetFunction(fn);
+        pauseReleasedSync.data = &handoffPauseReleased;
         uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &(h->async), doHandoff);
-        void_fp fp = h->getHandler(&Handoff::handler, h);
-        rc_set_pause_released_func(fp);
+        uv_async_init(loop, &pauseReleasedSync, doHandoff);
+        rc_set_pause_released_func(handoffPauseReleasedSync);
     }
+
+    Handoff handoffModePressed;
+    uv_async_t modePressedSync;
     
+    void handoffModePressedSync() {
+        uv_async_send(&modePressedSync);
+    }
+
     void RCsetModePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
@@ -145,15 +176,20 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        Handoff *h = new Handoff();
-        h->async.data = h;
-        h->cb.SetFunction(fn);
+        handoffModePressed.cb.SetFunction(fn);
+        modePressedSync.data = &handoffModePressed;
         uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &(h->async), doHandoff);
-        void_fp fp = h->getHandler(&Handoff::handler, h);
-        rc_set_mode_pressed_func(fp);
+        uv_async_init(loop, &modePressedSync, doHandoff);
+        rc_set_mode_pressed_func(handoffModePressedSync);
     }
+
+    Handoff handoffModeReleased;
+    uv_async_t modeReleasedSync;
     
+    void handoffModeReleasedSync() {
+        uv_async_send(&modeReleasedSync);
+    }
+
     void RCsetModeReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
@@ -164,15 +200,13 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        Handoff *h = new Handoff();
-        h->async.data = h;
-        h->cb.SetFunction(fn);
+        handoffModeReleased.cb.SetFunction(fn);
+        pauseReleasedSync.data = &handoffModeReleased;
         uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &(h->async), doHandoff);
-        void_fp fp = h->getHandler(&Handoff::handler, h);
-        rc_set_mode_released_func(fp);
+        uv_async_init(loop, &modeReleasedSync, doHandoff);
+        rc_set_mode_released_func(handoffModeReleasedSync);
     }
-    
+
     void ModuleInit(v8::Local<v8::Object> exports) {
         exports->Set(Nan::New("initialize").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCinitialize)->GetFunction());
