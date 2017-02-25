@@ -8,6 +8,8 @@ extern "C" {
     #include <roboticscape.h>
 }
 
+#define DEBUG
+
 typedef void (*void_fp)();
 
 /*
@@ -32,7 +34,6 @@ struct Wrapper
 };
 
 typedef Wrapper<std::function<void()>> MyWrapper;
-*/
 
 // OT => Object Type
 // RT => Return Type
@@ -49,6 +50,7 @@ struct lambda_expression {
         return (_object.*_function)(args...);
     }
 };
+*/
 
 namespace rc {
     void RCinitialize(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -108,6 +110,11 @@ namespace rc {
     static void doHandoff(uv_async_t* handle) {
         Nan::HandleScope scope;
         Handoff *h = static_cast<Handoff *>(handle->data);
+#ifdef DEBUG
+        fprintf(stderr, "Handoff %p calling %p\n", 
+            (void *)h, h->cb.GetFunction());
+        fflush(stderr);
+#endif
         h->cb.Call(0, 0);
     }
 
@@ -115,6 +122,9 @@ namespace rc {
     uv_async_t pausePressedSync;
     
     void handoffPausePressedSync() {
+        fprintf(stderr, "handoffPausePressedSync (%p) sent event %p\n",
+            (void *)&handoffPausePressedSync, (void *)&pausePressedSync);
+        fflush(stderr);
         uv_async_send(&pausePressedSync);
     }
 
@@ -133,12 +143,18 @@ namespace rc {
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &pausePressedSync, doHandoff);
         rc_set_pause_pressed_func(handoffPausePressedSync);
+        fprintf(stderr, "RCsetPausePressed registered event %p with callback %p and handoff %p\n", 
+            (void *)&pausePressedSync, (void* )handoffPausePressedSync, (void *)&handoffPausePressed);
+        fflush(stderr);
     }
 
     Handoff handoffPauseReleased;
     uv_async_t pauseReleasedSync;
     
     void handoffPauseReleasedSync() {
+        fprintf(stderr, "handoffPauseReleasedSync sent event %p\n",
+            (void *)&pauseReleasedSync);
+        fflush(stderr);
         uv_async_send(&pauseReleasedSync);
     }
 
@@ -157,12 +173,18 @@ namespace rc {
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &pauseReleasedSync, doHandoff);
         rc_set_pause_released_func(handoffPauseReleasedSync);
+        fprintf(stderr, "handoffPauseReleasedSync registered %p with callback %p\n", 
+            (void *)&pauseReleasedSync, (void* )handoffPauseReleasedSync);
+        fflush(stderr);
     }
 
     Handoff handoffModePressed;
     uv_async_t modePressedSync;
     
     void handoffModePressedSync() {
+        fprintf(stderr, "handoffModePressedSync sent event %p\n",
+            (void *)&modePressedSync);
+        fflush(stderr);
         uv_async_send(&modePressedSync);
     }
 
@@ -181,12 +203,18 @@ namespace rc {
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &modePressedSync, doHandoff);
         rc_set_mode_pressed_func(handoffModePressedSync);
+        fprintf(stderr, "handoffModePressedSync registered %p with callback %p\n", 
+            (void *)&modePressedSync, (void* )handoffModePressedSync);
+        fflush(stderr);
     }
 
     Handoff handoffModeReleased;
     uv_async_t modeReleasedSync;
     
     void handoffModeReleasedSync() {
+        fprintf(stderr, "handoffModeReleasedSync sent event %p\n",
+            (void *)&modeReleasedSync);
+        fflush(stderr);
         uv_async_send(&modeReleasedSync);
     }
 
@@ -205,6 +233,9 @@ namespace rc {
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &modeReleasedSync, doHandoff);
         rc_set_mode_released_func(handoffModeReleasedSync);
+        fprintf(stderr, "handoffModeReleasedSync registered %p with callback %p\n", 
+            (void *)&modeReleasedSync, (void* )handoffModeReleasedSync);
+        fflush(stderr);
     }
 
     void ModuleInit(v8::Local<v8::Object> exports) {
