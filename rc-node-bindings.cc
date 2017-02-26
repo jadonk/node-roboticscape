@@ -104,27 +104,29 @@ namespace rc {
     }
     
     struct Handoff {
-        Nan::Callback cb;
+        Nan::Callback *cb;
     };
     
     static void doHandoff(uv_async_t* handle) {
         Nan::HandleScope scope;
         Handoff *h = static_cast<Handoff *>(handle->data);
 #ifdef DEBUG
-        fprintf(stderr, "Handoff %p calling %p\n", 
-            (void *)h, h->cb.GetFunction());
+        fprintf(stderr, "Handoff %p using callback object %p to call %p\n", 
+            (void *)h, (void *)h->cb, h->cb->GetFunction());
         fflush(stderr);
 #endif
-        h->cb.Call(0, 0);
+        h->cb->Call(0, 0);
     }
 
     Handoff handoffPausePressed;
     uv_async_t pausePressedSync;
     
     void handoffPausePressedSync() {
-        fprintf(stderr, "handoffPausePressedSync (%p) sent event %p\n",
+#ifdef DEBUG
+        fprintf(stderr, "%s (%p) sent event %p\n", __func__,
             (void *)&handoffPausePressedSync, (void *)&pausePressedSync);
         fflush(stderr);
+#endif
         uv_async_send(&pausePressedSync);
     }
 
@@ -138,23 +140,33 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        handoffPausePressed.cb.SetFunction(fn);
+        handoffPausePressed.cb = new Nan::Callback(fn);
         pausePressedSync.data = &handoffPausePressed;
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &pausePressedSync, doHandoff);
         rc_set_pause_pressed_func(handoffPausePressedSync);
-        fprintf(stderr, "RCsetPausePressed registered event %p with callback %p and handoff %p\n", 
-            (void *)&pausePressedSync, (void* )handoffPausePressedSync, (void *)&handoffPausePressed);
+#ifdef DEBUG
+        fprintf(stderr, "%s registered event %p " \
+            "with C callback %p, handoff %p, callback object %p " \
+            "and C++ function %p\n", 
+            __func__, (void *)&pausePressedSync, 
+            (void* )handoffPausePressedSync,
+            (void *)&handoffPausePressed, 
+            handoffPausePressed.cb, 
+            handoffPausePressed.cb->GetFunction());
         fflush(stderr);
+#endif
     }
 
     Handoff handoffPauseReleased;
     uv_async_t pauseReleasedSync;
     
     void handoffPauseReleasedSync() {
-        fprintf(stderr, "handoffPauseReleasedSync sent event %p\n",
-            (void *)&pauseReleasedSync);
+#ifdef DEBUG
+        fprintf(stderr, "%s (%p) sent event %p\n", __func__,
+            (void *)&handoffPauseReleasedSync, (void *)&pauseReleasedSync);
         fflush(stderr);
+#endif
         uv_async_send(&pauseReleasedSync);
     }
 
@@ -168,23 +180,31 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        handoffPauseReleased.cb.SetFunction(fn);
+        handoffPauseReleased.cb = new Nan::Callback(fn);
         pauseReleasedSync.data = &handoffPauseReleased;
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &pauseReleasedSync, doHandoff);
         rc_set_pause_released_func(handoffPauseReleasedSync);
-        fprintf(stderr, "handoffPauseReleasedSync registered %p with callback %p\n", 
-            (void *)&pauseReleasedSync, (void* )handoffPauseReleasedSync);
+#ifdef DEBUG
+        fprintf(stderr, "%s registered event %p " \
+            "with C callback %p, handoff %p and C++ function %p\n", 
+            __func__, (void *)&pauseReleasedSync, 
+            (void* )handoffPauseReleasedSync,
+            (void *)&handoffPauseReleased, 
+            handoffPauseReleased.cb->GetFunction());
         fflush(stderr);
+#endif
     }
 
     Handoff handoffModePressed;
     uv_async_t modePressedSync;
     
     void handoffModePressedSync() {
-        fprintf(stderr, "handoffModePressedSync sent event %p\n",
-            (void *)&modePressedSync);
+#ifdef DEBUG
+        fprintf(stderr, "%s (%p) sent event %p\n", __func__,
+            (void *)&handoffModePressedSync, (void *)&modePressedSync);
         fflush(stderr);
+#endif
         uv_async_send(&modePressedSync);
     }
 
@@ -198,23 +218,29 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        handoffModePressed.cb.SetFunction(fn);
+        handoffModePressed.cb = new Nan::Callback(fn);
         modePressedSync.data = &handoffModePressed;
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &modePressedSync, doHandoff);
         rc_set_mode_pressed_func(handoffModePressedSync);
-        fprintf(stderr, "handoffModePressedSync registered %p with callback %p\n", 
-            (void *)&modePressedSync, (void* )handoffModePressedSync);
+#ifdef DEBUG
+        fprintf(stderr, "%s registered event %p " \
+            "with C callback %p, handoff %p and C++ function %p\n", 
+            __func__, (void *)&modePressedSync, (void* )handoffModePressedSync,
+            (void *)&handoffModePressed, handoffModePressed.cb->GetFunction());
         fflush(stderr);
+#endif
     }
 
     Handoff handoffModeReleased;
     uv_async_t modeReleasedSync;
     
     void handoffModeReleasedSync() {
-        fprintf(stderr, "handoffModeReleasedSync sent event %p\n",
-            (void *)&modeReleasedSync);
+#ifdef DEBUG
+        fprintf(stderr, "%s (%p) sent event %p\n", __func__,
+            (void *)&handoffModeReleasedSync, (void *)&modeReleasedSync);
         fflush(stderr);
+#endif
         uv_async_send(&modeReleasedSync);
     }
 
@@ -228,14 +254,18 @@ namespace rc {
             return;
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        handoffModeReleased.cb.SetFunction(fn);
+        handoffModeReleased.cb = new Nan::Callback(fn);
         pauseReleasedSync.data = &handoffModeReleased;
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &modeReleasedSync, doHandoff);
         rc_set_mode_released_func(handoffModeReleasedSync);
-        fprintf(stderr, "handoffModeReleasedSync registered %p with callback %p\n", 
-            (void *)&modeReleasedSync, (void* )handoffModeReleasedSync);
+#ifdef DEBUG
+        fprintf(stderr, "%s registered event %p " \
+            "with C callback %p, handoff %p and C++ function %p\n", 
+            __func__, (void *)&modeReleasedSync, (void* )handoffModeReleasedSync,
+            (void *)&handoffModeReleased, handoffModeReleased.cb->GetFunction());
         fflush(stderr);
+#endif
     }
 
     void ModuleInit(v8::Local<v8::Object> exports) {
