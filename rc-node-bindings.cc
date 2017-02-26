@@ -8,49 +8,7 @@ extern "C" {
     #include <roboticscape.h>
 }
 
-#define DEBUG
-
 typedef void (*void_fp)();
-
-/*
-template<typename TCallable>
-struct Wrapper
-{
-    typedef Wrapper<TCallable> Self;
-
-    TCallable function;
-
-    Wrapper(TCallable const & function)
-    : function(function)
-    {
-        // Nothing else
-    }
-
-    static void call()
-    {
-        Self * wrapper = reinterpret_cast<Self * >();
-        wrapper->function();
-    }
-};
-
-typedef Wrapper<std::function<void()>> MyWrapper;
-
-// OT => Object Type
-// RT => Return Type
-// A ... => Arguments
-template<typename OT, typename RT, typename ... A>
-struct lambda_expression {
-    OT _object;
-    RT(OT::*_function)(A...)const;
-
-    lambda_expression(const OT & object)
-        : _object(object), _function(&decltype(_object)::operator()) {}
-
-    RT operator() (A ... args) const {
-        return (_object.*_function)(args...);
-    }
-};
-*/
 
 namespace rc {
     void RCinitialize(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -131,7 +89,6 @@ namespace rc {
     }
 
     void RCsetPausePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        Nan::HandleScope scope;
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
             return;
@@ -172,7 +129,6 @@ namespace rc {
     }
 
     void RCsetPauseReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        Nan::HandleScope scope;
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
             return;
@@ -211,7 +167,6 @@ namespace rc {
     }
 
     void RCsetModePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        Nan::HandleScope scope;
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
             return;
@@ -248,7 +203,6 @@ namespace rc {
     }
 
     void RCsetModeReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        Nan::HandleScope scope;
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
             return;
