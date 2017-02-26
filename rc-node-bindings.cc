@@ -20,28 +20,28 @@ namespace rc {
         rc_cleanup();
     }
 
-    void RCgetState(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        rc_state_t s = rc_get_state();
-        switch(s) {
-	    case RUNNING:
-            info.GetReturnValue().Set(Nan::New("RUNNING").ToLocalChecked());
-            break;
-	    case PAUSED:
-            info.GetReturnValue().Set(Nan::New("PAUSED").ToLocalChecked());
-            break;
-	    case EXITING:
-            info.GetReturnValue().Set(Nan::New("EXITING").ToLocalChecked());
-            break;
-        case UNINITIALIZED:
-        default:
-            info.GetReturnValue().Set(Nan::New("UNINITIALIZED").ToLocalChecked());
-            break;
+    void RCstate(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() == 0) {
+            rc_state_t s = rc_get_state();
+            switch(s) {
+    	    case RUNNING:
+                info.GetReturnValue().Set(Nan::New("RUNNING").ToLocalChecked());
+                break;
+    	    case PAUSED:
+                info.GetReturnValue().Set(Nan::New("PAUSED").ToLocalChecked());
+                break;
+    	    case EXITING:
+                info.GetReturnValue().Set(Nan::New("EXITING").ToLocalChecked());
+                break;
+            case UNINITIALIZED:
+            default:
+                info.GetReturnValue().Set(Nan::New("UNINITIALIZED").ToLocalChecked());
+                break;
+            }
+            return;
         }
-    }
-
-    void RCsetState(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        if (info.Length() != 1) {
-            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
+        else if (info.Length() != 1) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 0 or 1)");
             return;
         }
         if (!info[0]->IsString()) {
@@ -61,7 +61,7 @@ namespace rc {
         }
     }
 
-    void RCsetLED(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+    void RCLED(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         if (info.Length() != 2) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 2)");
             return;
@@ -101,9 +101,15 @@ namespace rc {
         h->cb->Call(0, 0);
     }
 
-    Handoff handoffPausePressed;
-    uv_async_t pausePressedSync;
-    
+    uv_async_t pausePressedSync,
+        pauseReleasedSync,
+        modePressedSync,
+        modeReleasedSync;
+    Handoff handoffPausePressed,
+        handoffPauseReleased,
+        handoffModePressed,
+        handoffModeReleased;
+
     void handoffPausePressedSync() {
 #ifdef DEBUG
         fprintf(stderr, "%s (%p) sent event %p\n", __func__,
@@ -113,37 +119,6 @@ namespace rc {
         uv_async_send(&pausePressedSync);
     }
 
-    void RCsetPausePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        if (info.Length() != 1) {
-            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
-            return;
-        }
-        if (!info[0]->IsFunction()) {
-            Nan::ThrowTypeError("Wrong type (should be function)");
-            return;
-        }
-        v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        handoffPausePressed.cb = new Nan::Callback(fn);
-        pausePressedSync.data = &handoffPausePressed;
-        uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &pausePressedSync, doHandoff);
-        rc_set_pause_pressed_func(handoffPausePressedSync);
-#ifdef DEBUG
-        fprintf(stderr, "%s registered event %p " \
-            "with C callback %p, handoff %p, callback object %p " \
-            "and C++ function %p\n", 
-            __func__, (void *)&pausePressedSync, 
-            (void* )handoffPausePressedSync,
-            (void *)&handoffPausePressed, 
-            handoffPausePressed.cb, 
-            handoffPausePressed.cb->GetFunction());
-        fflush(stderr);
-#endif
-    }
-
-    Handoff handoffPauseReleased;
-    uv_async_t pauseReleasedSync;
-    
     void handoffPauseReleasedSync() {
 #ifdef DEBUG
         fprintf(stderr, "%s (%p) sent event %p\n", __func__,
@@ -153,35 +128,6 @@ namespace rc {
         uv_async_send(&pauseReleasedSync);
     }
 
-    void RCsetPauseReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        if (info.Length() != 1) {
-            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
-            return;
-        }
-        if (!info[0]->IsFunction()) {
-            Nan::ThrowTypeError("Wrong type (should be function)");
-            return;
-        }
-        v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        handoffPauseReleased.cb = new Nan::Callback(fn);
-        pauseReleasedSync.data = &handoffPauseReleased;
-        uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &pauseReleasedSync, doHandoff);
-        rc_set_pause_released_func(handoffPauseReleasedSync);
-#ifdef DEBUG
-        fprintf(stderr, "%s registered event %p " \
-            "with C callback %p, handoff %p and C++ function %p\n", 
-            __func__, (void *)&pauseReleasedSync, 
-            (void* )handoffPauseReleasedSync,
-            (void *)&handoffPauseReleased, 
-            handoffPauseReleased.cb->GetFunction());
-        fflush(stderr);
-#endif
-    }
-
-    Handoff handoffModePressed;
-    uv_async_t modePressedSync;
-    
     void handoffModePressedSync() {
 #ifdef DEBUG
         fprintf(stderr, "%s (%p) sent event %p\n", __func__,
@@ -191,33 +137,6 @@ namespace rc {
         uv_async_send(&modePressedSync);
     }
 
-    void RCsetModePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        if (info.Length() != 1) {
-            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
-            return;
-        }
-        if (!info[0]->IsFunction()) {
-            Nan::ThrowTypeError("Wrong type (should be function)");
-            return;
-        }
-        v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        handoffModePressed.cb = new Nan::Callback(fn);
-        modePressedSync.data = &handoffModePressed;
-        uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &modePressedSync, doHandoff);
-        rc_set_mode_pressed_func(handoffModePressedSync);
-#ifdef DEBUG
-        fprintf(stderr, "%s registered event %p " \
-            "with C callback %p, handoff %p and C++ function %p\n", 
-            __func__, (void *)&modePressedSync, (void* )handoffModePressedSync,
-            (void *)&handoffModePressed, handoffModePressed.cb->GetFunction());
-        fflush(stderr);
-#endif
-    }
-
-    Handoff handoffModeReleased;
-    uv_async_t modeReleasedSync;
-    
     void handoffModeReleasedSync() {
 #ifdef DEBUG
         fprintf(stderr, "%s (%p) sent event %p\n", __func__,
@@ -227,26 +146,64 @@ namespace rc {
         uv_async_send(&modeReleasedSync);
     }
 
-    void RCsetModeReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        if (info.Length() != 1) {
-            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
+    void RCon(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() != 2) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 2)");
             return;
         }
-        if (!info[0]->IsFunction()) {
-            Nan::ThrowTypeError("Wrong type (should be function)");
+        if (!info[0]->IsString()) {
+            Nan::ThrowTypeError("Wrong type for argument 0 (should be string)");
             return;
         }
-        v8::Local<v8::Function> fn = info[0].As<v8::Function>();
-        handoffModeReleased.cb = new Nan::Callback(fn);
-        modeReleasedSync.data = &handoffModeReleased;
+        if (!info[1]->IsFunction()) {
+            Nan::ThrowTypeError("Wrong type for argument 1 (should be function)");
+            return;
+        }
+        v8::String::Utf8Value str(info[0]->ToString());
+        char * s = (char *)*str;
+        v8::Local<v8::Function> fn = info[1].As<v8::Function>();
+        Handoff * h;
+        uv_async_t * event;
+        void_fp fp;
+        int (* set)(void (*func)(void));
+        if(!strcmp(s, "PAUSE_PRESSED")) {
+            h = &handoffPausePressed;
+            event = &pausePressedSync;
+            fp = handoffPausePressedSync;
+            set = rc_set_pause_pressed_func;
+        } else if(!strcmp(s, "PAUSE_RELEASED")) {
+            h = &handoffPauseReleased;
+            event = &pauseReleasedSync;
+            fp = handoffPauseReleasedSync;
+            set = rc_set_pause_released_func;
+        } else if(!strcmp(s, "MODE_PRESSED")) {
+            h = &handoffModePressed;
+            event = &modePressedSync;
+            fp = handoffModePressedSync;
+            set = rc_set_mode_pressed_func;
+        } else if(!strcmp(s, "MODE_RELEASED")) {
+            h = &handoffModeReleased;
+            event = &modeReleasedSync;
+            fp = handoffModeReleasedSync;
+            set = rc_set_mode_released_func;
+        } else {
+            Nan::ThrowTypeError("Wrong value (should be "\
+                "'PAUSE_PRESSED', 'PAUSE_RELEASED' "\
+                "'MODE_PRESSED', or 'MODE_RELEASED')");
+            return;
+        }
+        h->cb = new Nan::Callback(fn);
+        event->data = h;
         uv_loop_t *loop = uv_default_loop();
-        uv_async_init(loop, &modeReleasedSync, doHandoff);
-        rc_set_mode_released_func(handoffModeReleasedSync);
+        uv_async_init(loop, event, doHandoff);
+        set(fp);
 #ifdef DEBUG
-        fprintf(stderr, "%s registered event %p " \
-            "with C callback %p, handoff %p and C++ function %p\n", 
-            __func__, (void *)&modeReleasedSync, (void* )handoffModeReleasedSync,
-            (void *)&handoffModeReleased, handoffModeReleased.cb->GetFunction());
+        fprintf(stderr, "Registered event %p " \
+            "with C callback %p, handoff %p, callback object %p " \
+            "and C++ function %p using function %p\n", 
+            (void *)event, 
+            (void* )fp, (void *)h, h->cb, 
+            h->cb->GetFunction(), (void *)set);
         fflush(stderr);
 #endif
     }
@@ -256,22 +213,21 @@ namespace rc {
         exports->Set(Nan::New("initialize").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCinitialize)->GetFunction());
         /* Flow State */
-        exports->Set(Nan::New("get_state").ToLocalChecked(),
-            Nan::New<v8::FunctionTemplate>(RCgetState)->GetFunction());
-        exports->Set(Nan::New("set_state").ToLocalChecked(),
-            Nan::New<v8::FunctionTemplate>(RCsetState)->GetFunction());
+        exports->Set(Nan::New("state").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCstate)->GetFunction());
         /* LEDs */
-        exports->Set(Nan::New("set_led").ToLocalChecked(),
-            Nan::New<v8::FunctionTemplate>(RCsetLED)->GetFunction());
+        exports->Set(Nan::New("led").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCLED)->GetFunction());
         /* Buttons */
-        exports->Set(Nan::New("set_pause_pressed_func").ToLocalChecked(),
-            Nan::New<v8::FunctionTemplate>(RCsetPausePressed)->GetFunction());
-        exports->Set(Nan::New("set_pause_released_func").ToLocalChecked(),
-            Nan::New<v8::FunctionTemplate>(RCsetPauseReleased)->GetFunction());
-        exports->Set(Nan::New("set_mode_pressed_func").ToLocalChecked(),
-            Nan::New<v8::FunctionTemplate>(RCsetModePressed)->GetFunction());
-        exports->Set(Nan::New("set_mode_released_func").ToLocalChecked(),
-            Nan::New<v8::FunctionTemplate>(RCsetModeReleased)->GetFunction());
+        exports->Set(Nan::New("on").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCon)->GetFunction());
+        /* DC motors */
+        /*
+        exports->Set(Nan::New("motors").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCmotors)->GetFunction());
+        exports->Set(Nan::New("motor").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCsetMotor)->GetFunction());
+        */
         node::AtExit(RCexit);
     }
 
