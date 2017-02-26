@@ -131,6 +131,7 @@ namespace rc {
     }
 
     void RCsetPausePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        Nan::HandleScope scope;
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
             return;
@@ -171,6 +172,7 @@ namespace rc {
     }
 
     void RCsetPauseReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        Nan::HandleScope scope;
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
             return;
@@ -209,6 +211,7 @@ namespace rc {
     }
 
     void RCsetModePressed(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        Nan::HandleScope scope;
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
             return;
@@ -245,6 +248,7 @@ namespace rc {
     }
 
     void RCsetModeReleased(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        Nan::HandleScope scope;
         if (info.Length() != 1) {
             Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
             return;
@@ -255,7 +259,7 @@ namespace rc {
         }
         v8::Local<v8::Function> fn = info[0].As<v8::Function>();
         handoffModeReleased.cb = new Nan::Callback(fn);
-        pauseReleasedSync.data = &handoffModeReleased;
+        modeReleasedSync.data = &handoffModeReleased;
         uv_loop_t *loop = uv_default_loop();
         uv_async_init(loop, &modeReleasedSync, doHandoff);
         rc_set_mode_released_func(handoffModeReleasedSync);
