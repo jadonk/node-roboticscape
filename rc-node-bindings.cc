@@ -60,6 +60,31 @@ namespace rc {
             return;
         }
     }
+
+    void RCsetLED(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() != 2) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 2)");
+            return;
+        }
+        if (!info[0]->IsString()) {
+            Nan::ThrowTypeError("Wrong type (should be string)");
+            return;
+        }
+        if (!info[1]->IsBoolean() && !info[1]->IsNumber()) {
+            Nan::ThrowTypeError("Wrong type (should be boolean or number)");
+            return;
+        }
+        v8::String::Utf8Value str(info[0]->ToString());
+        char * s = (char *)*str;
+        bool i = (bool)info[1]->ToBoolean()->Value();
+        if(!strcmp(s, "GREEN")) rc_set_led(GREEN, i ? 1 : 0);
+        else if(!strcmp(s, "RED")) rc_set_led(RED, i ? 1 : 0);
+        else {
+            Nan::ThrowTypeError("Wrong value (should be 'GREEN', "\
+                    "or 'RED'");
+            return;
+        }
+    }
     
     struct Handoff {
         Nan::Callback *cb;
@@ -227,12 +252,18 @@ namespace rc {
     }
 
     void ModuleInit(v8::Local<v8::Object> exports) {
+        /* Init and Cleanup */
         exports->Set(Nan::New("initialize").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCinitialize)->GetFunction());
+        /* Flow State */
         exports->Set(Nan::New("get_state").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCgetState)->GetFunction());
         exports->Set(Nan::New("set_state").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCsetState)->GetFunction());
+        /* LEDs */
+        exports->Set(Nan::New("set_led").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCsetLED)->GetFunction());
+        /* Buttons */
         exports->Set(Nan::New("set_pause_pressed_func").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCsetPausePressed)->GetFunction());
         exports->Set(Nan::New("set_pause_released_func").ToLocalChecked(),
