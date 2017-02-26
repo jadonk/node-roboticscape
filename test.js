@@ -14,7 +14,8 @@ rc.on("PAUSE_PRESSED", onPausePressed);
 rc.on("PAUSE_RELEASED", onPauseReleased);
 rc.on("MODE_PRESSED", onModePressed);
 rc.on("MODE_RELEASED", onModeReleased);
-console.log("Press buttons now")
+console.log("Press buttons now");
+rc.motors("ENABLE");
 setTimeout(setRed, 4000);
 setTimeout(onTimeout, 5000);
 
