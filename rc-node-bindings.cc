@@ -231,7 +231,7 @@ namespace rc {
             }
             return;
         }
-        float duty = (float)info[1]->ToNumber()->Value();
+        float duty = (float)info[0]->ToNumber()->Value();
         rc_set_motor_all(duty);
     }
 
