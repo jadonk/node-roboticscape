@@ -208,9 +208,34 @@ namespace rc {
 #endif
     }
 
-    void RCmotors(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+    void RCmotor(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() == 2) {
+            if (!info[0]->IsInt32()) {
+                Nan::ThrowTypeError("Wrong type for argument 0 (should be integer)");
+                return;
+            }
+            int motor = (int)info[0]->ToInt32()->Value();
+            if (motor < 1 || motor > 4) {
+                Nan::ThrowTypeError("Wrong value for argument 0 (should be 1 - 4)");
+                return;
+            }
+            if (info[1]->IsString()) {
+                v8::String::Utf8Value str(info[1]->ToString());
+                char * s = (char *)*str;
+                if (!strcmp(s, "FREE_SPIN")) rc_set_motor_free_spin(motor);
+                else if (!strcmp(s, "BRAKE")) rc_set_motor_brake(motor);
+                else {
+                    Nan::ThrowTypeError("Wrong value for argument 1 "\
+                        "(should be 'FREE_SPIN', 'BREAK' or a numeric duty)");
+                }
+                return;
+            }
+            float duty = (float)info[1]->ToNumber()->Value();
+            rc_set_motor(motor, duty);
+            return;
+        }
         if (info.Length() != 1) {
-            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
+            Nan::ThrowTypeError("Wrong number of arguments (should be 1 or 2)");
             return;
         }
         if (!info[0]->IsString() && !info[0]->IsNumber()) {
@@ -235,35 +260,6 @@ namespace rc {
         rc_set_motor_all(duty);
     }
 
-    void RCmotor(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-        if (info.Length() != 2) {
-            Nan::ThrowTypeError("Wrong number of arguments (should be 2)");
-            return;
-        }
-        if (!info[0]->IsInt32()) {
-            Nan::ThrowTypeError("Wrong type for argument 0 (should be integer)");
-            return;
-        }
-        int motor = (int)info[0]->ToInt32()->Value();
-        if (motor < 1 || motor > 4) {
-            Nan::ThrowTypeError("Wrong value for argument 0 (should be 1 - 4)");
-            return;
-        }
-        if (info[1]->IsString()) {
-            v8::String::Utf8Value str(info[1]->ToString());
-            char * s = (char *)*str;
-            if (!strcmp(s, "FREE_SPIN")) rc_set_motor_free_spin(motor);
-            else if (!strcmp(s, "BRAKE")) rc_set_motor_brake(motor);
-            else {
-                Nan::ThrowTypeError("Wrong value for argument 1 "\
-                    "(should be 'FREE_SPIN', 'BREAK' or a numeric duty)");
-            }
-            return;
-        }
-        float duty = (float)info[1]->ToNumber()->Value();
-        rc_set_motor(motor, duty);
-    }
-
     void ModuleInit(v8::Local<v8::Object> exports) {
         /* Init and Cleanup */
         exports->Set(Nan::New("initialize").ToLocalChecked(),
@@ -278,8 +274,6 @@ namespace rc {
         exports->Set(Nan::New("on").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCon)->GetFunction());
         /* DC motors */
-        exports->Set(Nan::New("motors").ToLocalChecked(),
-            Nan::New<v8::FunctionTemplate>(RCmotors)->GetFunction());
         exports->Set(Nan::New("motor").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCmotor)->GetFunction());
         node::AtExit(RCexit);

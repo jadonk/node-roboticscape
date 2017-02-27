@@ -15,13 +15,13 @@ rc.on("PAUSE_RELEASED", onPauseReleased);
 rc.on("MODE_PRESSED", onModePressed);
 rc.on("MODE_RELEASED", onModeReleased);
 console.log("Press buttons now");
-rc.motors("ENABLE");
+rc.motor("ENABLE");
 setTimeout(testMotors, 2000);
 
 function testMotors() {
     console.log("Running all motors forward");
-    rc.motors("ENABLE");
-    rc.motors(0.3);
+    rc.motor("ENABLE");
+    rc.motor(0.3);
     setTimeout(nextMotors, 2000);
 }
 
@@ -29,12 +29,14 @@ function nextMotors() {
     console.log("Running motors in alternate directions");
     rc.motor(1, 0.3);
     rc.motor(2, -0.3)
+    rc.motor(3, 0.3);
+    rc.motor(4, -0.3)
     setTimeout(doneWithMotors, 2000);
 }
 
 function doneWithMotors() {
     console.log("Disabling all motors");
-    rc.motors("DISABLE");
+    rc.motor("DISABLE");
     setTimeout(setRed, 1000);
 }
 
