@@ -226,7 +226,7 @@ namespace rc {
                 else if (!strcmp(s, "BRAKE")) rc_set_motor_brake(motor);
                 else {
                     Nan::ThrowTypeError("Wrong value for argument 1 "\
-                        "(should be 'FREE_SPIN', 'BREAK' or a numeric duty)");
+                        "(should be 'FREE_SPIN', 'BRAKE' or a numeric duty)");
                 }
                 return;
             }
@@ -252,7 +252,7 @@ namespace rc {
             else {
                 Nan::ThrowTypeError("Wrong value (should be "\
                     "'ENABLE', 'DISABLE' "\
-                    "'FREE_SPIN', 'BREAK' or a numeric duty)");
+                    "'FREE_SPIN', 'BRAKE' or a numeric duty)");
             }
             return;
         }
