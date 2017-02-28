@@ -260,6 +260,38 @@ namespace rc {
         rc_set_motor_all(duty);
     }
 
+    void RCencoder(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() == 2) {
+            if (!info[0]->IsInt32()) {
+                Nan::ThrowTypeError("Wrong type for argument 0 (should be integer)");
+                return;
+            }
+            if (!info[0]->IsInt32()) {
+                Nan::ThrowTypeError("Wrong type for argument 1 (should be integer)");
+                return;
+            }
+            int encoder = (int)info[0]->ToInt32()->Value();
+            int value = (int)info[1]->ToInt32()->Value();
+            if (encoder < 1 || encoder > 4) {
+                Nan::ThrowTypeError("Wrong value for argument 0 (should be 1 - 4)");
+                return;
+            }
+            rc_set_encoder_pos(encoder, value);
+            return;
+        }
+        if (info.Length() != 1) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 1 or 2)");
+            return;
+        }
+        if (!info[0]->IsInt32()) {
+            Nan::ThrowTypeError("Wrong type for argument (should be integer)");
+            return;
+        }
+        int encoder = (int)info[0]->ToInt32()->Value();
+        int i = rc_get_encoder_pos(encoder);
+        info.GetReturnValue().Set(i);
+    }
+
     void ModuleInit(v8::Local<v8::Object> exports) {
         /* Init and Cleanup */
         exports->Set(Nan::New("initialize").ToLocalChecked(),
@@ -276,6 +308,9 @@ namespace rc {
         /* DC motors */
         exports->Set(Nan::New("motor").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCmotor)->GetFunction());
+        /* encoders */
+        exports->Set(Nan::New("encoder").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCencoder)->GetFunction());
         node::AtExit(RCexit);
     }
 

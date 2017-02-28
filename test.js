@@ -26,6 +26,15 @@ function testMotors() {
 }
 
 function nextMotors() {
+    var enc1 = rc.encoder(1);
+    rc.encoder(1, 0);
+    var enc2 = rc.encoder(2);
+    rc.encoder(2, -100);
+    var enc3 = rc.encoder(3);
+    rc.encoder(3, 100);
+    var enc4 = rc.encoder(4);
+    rc.encoder(4, 0);
+    console.log("Encoders read " + enc1 + ", " + enc2 + ", " + enc3 + ", " + enc4);
     console.log("Running motors in alternate directions");
     rc.motor(1, 0.3);
     rc.motor(2, -0.3)
@@ -35,6 +44,11 @@ function nextMotors() {
 }
 
 function doneWithMotors() {
+    var enc1 = rc.encoder(1);
+    var enc2 = rc.encoder(2);
+    var enc3 = rc.encoder(3);
+    var enc4 = rc.encoder(4);
+    console.log("Encoders read " + enc1 + ", " + enc2 + ", " + enc3 + ", " + enc4);
     console.log("Disabling all motors");
     rc.motor("DISABLE");
     setTimeout(setRed, 1000);
