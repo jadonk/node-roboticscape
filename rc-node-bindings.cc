@@ -13,10 +13,12 @@ typedef void (*void_fp)();
 namespace rc {
     void RCinitialize(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         v8::Local<v8::Boolean> i = Nan::New((bool)rc_initialize());
+        rc_disable_signal_handler();
         info.GetReturnValue().Set(i);
     }
     
     static void RCexit(void*) {
+        fprintf("info: running rc_cleanup()\n");
         rc_cleanup();
     }
 
