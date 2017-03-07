@@ -1,10 +1,11 @@
 {
   "name": "roboticscape",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Node.js bindings for libroboticscape for BeagleBoard.org BeagleBone Blue or Robotics Cape",
-  "main": "build/Release/roboticscape.node",
+  "main": "index.js",
   "scripts": {
-    "test": "node test.js"
+    "test": "node test.js",
+    "docs": "node_modules/.bin/jsdoc2md index.js > api.md"
   },
   "repository": {
     "type": "git",
@@ -22,5 +23,8 @@
   "homepage": "https://github.com/jadonk/node-roboticscape/blob/master/README.md",
   "dependencies": {
     "nan": "2.5.1"
+  },
+  "devDependencies": {
+    "jsdoc-to-markdown": "3.0.0"
   }
 }
