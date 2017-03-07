@@ -14,6 +14,7 @@ namespace rc {
     void RCinitialize(const Nan::FunctionCallbackInfo<v8::Value>& info) {
         v8::Local<v8::Boolean> i = Nan::New((bool)rc_initialize());
         info.GetReturnValue().Set(i);
+        rc_disable_signal_handler();
     }
     
     static void RCexit(void*) {
