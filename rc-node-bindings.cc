@@ -15,7 +15,6 @@ namespace rc {
         v8::Local<v8::Boolean> i = Nan::New((bool)rc_initialize());
         rc_disable_signal_handler();
         info.GetReturnValue().Set(i);
-        rc_disable_signal_handler();
     }
     
     static void RCexit(void*) {
