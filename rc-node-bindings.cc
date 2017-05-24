@@ -18,7 +18,7 @@ namespace rc {
     }
     
     static void RCexit(void*) {
-        fprintf("info: running rc_cleanup()\n");
+        fprintf(stderr, "info: running rc_cleanup()\n");
         rc_cleanup();
     }
 
