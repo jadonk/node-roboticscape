@@ -159,7 +159,7 @@ rc.motor(1, 0.3);
 
 **Parameters**
 
--  `motor` **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer)** the 
+-  `motor` **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** the 
    motor to target.  (Optional, defaults to setting the value for all motors. Remove if not used; do not just set 
    to `undefined`.)
 -  `value` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String) | [Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** value
@@ -181,12 +181,12 @@ rc.encoder(1, 0);
 
 **Parameters**
 
--  `encoder` **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer)** the 
+-  `encoder` **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** the 
    index of the encoder to read or set.
--  `value` **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer)** value
+-  `value` **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** value
    to which to set the encoder count.  (Optional, defaults to reading only.)
 
-Returns **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer)** current
+Returns **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** current
    encoder count.
 
 ## adc
@@ -203,7 +203,7 @@ var value = rc.adc(1);
 
 **Parameters**
 
--  `channel` **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer) | [String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the 
+-  `channel` **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number) | [String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the 
    channel to read. Possible values are "BATTERY", "DC_JACK", 0, 1, 2 or 3.
 
 Returns **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** voltage
