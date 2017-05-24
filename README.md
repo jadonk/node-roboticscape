@@ -143,3 +143,26 @@ rc.on("MODE_RELEASED", function() { console.log("MODE button released."); });
    of event should be one of "PAUSE\_PRESSED", "PAUSE\_RELEASED", "MODE\_PRESSED" or "MODE\_RELEASED".
 -  `callback` **[Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function)** function
    doesn\'t take any arguments.
+
+## motor
+
+Control the DC motor outputs.
+
+See the [DC Motors libroboticscape documentation](http://www.strawsondesign.com/#!manual-dc-motors).
+
+**Examples**
+
+```javascript
+rc.motor("ENABLE");
+rc.motor(1, 0.3);
+```
+
+**Parameters**
+
+-  `motor` **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** the 
+   motor to target.  (Optional, defaults to setting the value for all motors. Remove if not used; do not just set 
+   to `undefined`.)
+-  `value` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String) | [Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** value
+   or mode to set motor or motors. Can be one of "ENABLE", "DISABLE", "FREE_SPIN", "BRAKE" or a number from
+   -1 to 1. The "ENABLE" and "DISABLE" arguments can currently only be applied when no motor is specified.
+
