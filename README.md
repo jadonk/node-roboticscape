@@ -159,10 +159,32 @@ rc.motor(1, 0.3);
 
 **Parameters**
 
--  `motor` **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** the 
+-  `motor` **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer)** the 
    motor to target.  (Optional, defaults to setting the value for all motors. Remove if not used; do not just set 
    to `undefined`.)
 -  `value` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String) | [Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** value
    or mode to set motor or motors. Can be one of "ENABLE", "DISABLE", "FREE_SPIN", "BRAKE" or a number from
    -1 to 1. The "ENABLE" and "DISABLE" arguments can currently only be applied when no motor is specified.
 
+## encoder
+
+Read and set the count on the quadrature encoder input counters.
+
+See the [Quadrature Encoder Counting libroboticscape documentation](http://www.strawsondesign.com/#!manual-encoders).
+
+**Examples**
+
+```javascript
+var enc1 = rc.encoder(1);
+rc.encoder(1, 0);
+```
+
+**Parameters**
+
+-  `encoder` **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer)** the 
+   index of the encoder to read or set.
+-  `value` **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer)** value
+   to which to set the encoder count.  (Optional, defaults to reading only.)
+
+Returns **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer)** current
+   encoder count.
