@@ -208,3 +208,23 @@ var value = rc.adc(1);
 
 Returns **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** voltage
    measured by the ADC on the specified channel.
+
+## imu
+
+Read the inertial measurement unit sensor (IMU).
+
+See the [Inertial Measurment Unit libroboticscape documentation](http://www.strawsondesign.com/#!manual-imu).
+
+**Examples**
+
+```javascript
+var state = rc.imu();
+```
+
+**Parameters**
+
+Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** IMU state
+-  `state.accel` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)>** accelerometer state in meters per second squared
+-  `state.gyro` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)>** gyroscope state in degrees per second
+-  `state.mag` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)>** magnetometer state in microteslas
+-  `state.temp` **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** thermometer state in degrees Celcius
