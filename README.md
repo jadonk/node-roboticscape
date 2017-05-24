@@ -109,9 +109,9 @@ Returns **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refer
 
 ## led
 
-Set or read the libroboticscape program state.
+Set the red and green user LEDs.
 
-See the [Program Flow State libroboticscape documentation](http://www.strawsondesign.com/#!manual-flow-state).
+See the [LEDs libroboticscape documentation](http://www.strawsondesign.com/#!manual-leds).
 
 **Examples**
 
@@ -125,19 +125,21 @@ rc.led("GREEN", true);
    "RED" or "GREEN".
 -  `state` **[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true for on and false for off.
 
-## led
+## on
 
-Set the red and green user LEDs.
+Register event callbacks. Currently, only the button press events have been implemented.
 
-See the [LEDs libroboticscape documentation](http://www.strawsondesign.com/#!manual-leds).
+See the [Buttons libroboticscape documentation](http://www.strawsondesign.com/#!manual-buttons).
 
 **Examples**
 
 ```javascript
-rc.led("RUNNING");
+rc.on("MODE_RELEASED", function() { console.log("MODE button released."); });
 ```
+
 **Parameters**
 
--  `led` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** led name to set state should be either
-   "RED" or "GREEN".
--  `state` **[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true for on and false for off.
+-  `event` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** name 
+   of event should be one of "PAUSE\_PRESSED", "PAUSE\_RELEASED", "MODE\_PRESSED" or "MODE\_RELEASED".
+-  `callback` **[Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function)** function
+   doesn\'t take any arguments.
