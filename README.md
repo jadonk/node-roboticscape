@@ -95,6 +95,7 @@ See the [Program Flow State libroboticscape documentation](http://www.strawsonde
 rc.state("RUNNING");
 var state = rc.state();
 ```
+
 **Parameters**
 
 -  `state` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** state to enter must be one of
@@ -111,6 +112,24 @@ Returns **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refer
 Set or read the libroboticscape program state.
 
 See the [Program Flow State libroboticscape documentation](http://www.strawsondesign.com/#!manual-flow-state).
+
+**Examples**
+
+```javascript
+rc.led("GREEN", true);
+```
+
+**Parameters**
+
+-  `led` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** led name to set state should be either
+   "RED" or "GREEN".
+-  `state` **[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true for on and false for off.
+
+## led
+
+Set the red and green user LEDs.
+
+See the [LEDs libroboticscape documentation](http://www.strawsondesign.com/#!manual-leds).
 
 **Examples**
 
