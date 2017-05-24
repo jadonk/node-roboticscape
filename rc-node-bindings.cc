@@ -307,8 +307,8 @@ namespace rc {
         if (info[0]->IsString()) {
             v8::String::Utf8Value str(info[0]->ToString());
             char * s = (char *)*str;
-            if (!strcmp(s, "BATTERY")) value = rc_get_battery_voltage();
-            else if (!strcmp(s, "DC_JACK")) value = rc_get_dc_jack_voltage();
+            if (!strcmp(s, "BATTERY")) value = rc_battery_voltage();
+            else if (!strcmp(s, "DC_JACK")) value = rc_dc_jack_voltage();
             else {
                 Nan::ThrowTypeError("Wrong value (should be "\
                     "'BATTERY', 'DC_JACK' "\
