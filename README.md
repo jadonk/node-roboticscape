@@ -1,5 +1,5 @@
 # node-roboticscape
-Node.js bindings for libroboticscape for BeagleBoard.org (BeagleBone Blue)[https://beagleboard.org/blue] or (Robotics Cape)[https://beagleboard.org/RoboticsCape]
+Node.js bindings for libroboticscape for BeagleBoard.org [BeagleBone Blue](https://beagleboard.org/blue) or [Robotics Cape](https://beagleboard.org/RoboticsCape)
 
 ## libroboticscape documentation
 http://www.strawsondesign.com/#!manual-init-cleanup
