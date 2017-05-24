@@ -88,7 +88,7 @@ var state = rc.state();
 ```
 **Parameters**
 
--  `state` **([String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** state to enter must be one of
+-  `state` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** state to enter must be one of
    "UNINITIALIZED", "RUNNING", "PAUSED" or "EXITING". If undefined, the current state will be returned instead of entering a new state.
 
 Returns **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** when no arguments are provided with one of the following values
