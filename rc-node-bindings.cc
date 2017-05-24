@@ -294,6 +294,41 @@ namespace rc {
         info.GetReturnValue().Set(i);
     }
 
+    void RCadc(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        float value = 0.0;
+        if (info.Length() != 1) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
+            return;
+        }
+        if (!info[0]->IsString() && !info[0]->IsInt32()) {
+            Nan::ThrowTypeError("Wrong type for argument (should be string or integer)");
+            return;
+        }
+        if (info[0]->IsString()) {
+            v8::String::Utf8Value str(info[0]->ToString());
+            char * s = (char *)*str;
+            if (!strcmp(s, "BATTERY")) value = rc_get_battery_voltage();
+            else if (!strcmp(s, "DC_JACK")) value = rc_get_dc_jack_voltage();
+            else {
+                Nan::ThrowTypeError("Wrong value (should be "\
+                    "'BATTERY', 'DC_JACK' "\
+                    "0, 1, 2 or 3)");
+                return;
+            }
+            info.GetReturnValue().Set(value);
+            return;
+        }
+        int adc = (int)info[0]->ToInt32()->Value();
+        if (adc < 0 || adc > 3) {
+            Nan::ThrowTypeError("Wrong value (should be "\
+                "'BATTERY', 'DC_JACK' "\
+                "0, 1, 2 or 3)");
+            return;
+        }
+        value = rc_adc_volt(adc);
+        info.GetReturnValue().Set(value);
+    }
+
     void ModuleInit(v8::Local<v8::Object> exports) {
         /* Init and Cleanup */
         exports->Set(Nan::New("initialize").ToLocalChecked(),
@@ -313,6 +348,9 @@ namespace rc {
         /* encoders */
         exports->Set(Nan::New("encoder").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCencoder)->GetFunction());
+        /* ADC */
+        exports->Set(Nan::New("adc").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCadc)->GetFunction());
         node::AtExit(RCexit);
     }
 
