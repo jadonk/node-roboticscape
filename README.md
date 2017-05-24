@@ -188,3 +188,23 @@ rc.encoder(1, 0);
 
 Returns **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer)** current
    encoder count.
+
+## adc
+
+Read a channel of the analog-to-digital converter.
+
+See the [Analog to Digital Converter libroboticscape documentation](http://www.strawsondesign.com/#!manual-adc).
+
+**Examples**
+
+```javascript
+var value = rc.adc(1);
+```
+
+**Parameters**
+
+-  `channel` **[Integer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Integer) | [String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the 
+   channel to read. Possible values are "BATTERY", "DC_JACK", 0, 1, 2 or 3.
+
+Returns **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** voltage
+   measured by the ADC on the specified channel.
