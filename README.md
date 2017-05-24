@@ -106,3 +106,19 @@ Returns **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refer
 * "PAUSED"
 * "EXITING"
 
+## led
+
+Set or read the libroboticscape program state.
+
+See the [Program Flow State libroboticscape documentation](http://www.strawsondesign.com/#!manual-flow-state).
+
+**Examples**
+
+```javascript
+rc.led("RUNNING");
+```
+**Parameters**
+
+-  `led` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** led name to set state should be either
+   "RED" or "GREEN".
+-  `state` **[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true for on and false for off.
