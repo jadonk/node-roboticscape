@@ -33,16 +33,25 @@ rc.state("RUNNING");
 
 /* Exercise the robotics cape hardware */
 rc.led("GREEN", true);
-rc.on("PAUSE_PRESSED", function() { console.log("PAUSE pressed"); });
+rc.on("PAUSE_PRESSED", function() { 
+    console.log("PAUSE pressed");
+    
+    /* Set the state to EXITING */
+    rc.state("EXITING");
+});
 rc.motor("ENABLE");
 rc.motor(0.3);
-var enc1 = rc.encoder(1);
 
-/* Set the state to EXITING */
-rc.state("EXITING");
-
-/* The robotics cape userspace interface is automatically freed on exit */
-process.exit();
+/* Read encoder every second until PAUSE button pressed */
+setInterval(function() {
+    if(rc.state() == "RUNNING") {
+        var enc1 = rc.encoder(1);
+        console.log("encoder 1 = " + enc1);
+    } else {
+        /* The robotics cape userspace interface is automatically freed on exit */
+        process.exit();
+    }
+}, 1000);
 ```
 
 # API
