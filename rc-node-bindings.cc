@@ -16,7 +16,7 @@ namespace rc {
         rc_disable_signal_handler();
         info.GetReturnValue().Set(i);
     }
-    
+
     static void RCexit(void*) {
         fprintf(stderr, "info: running rc_cleanup()\n");
         rc_cleanup();
@@ -79,24 +79,24 @@ namespace rc {
         v8::String::Utf8Value str(info[0]->ToString());
         char * s = (char *)*str;
         bool i = (bool)info[1]->ToBoolean()->Value();
-        if (!strcmp(s, "GREEN")) rc_set_led(GREEN, i ? 1 : 0);
-        else if (!strcmp(s, "RED")) rc_set_led(RED, i ? 1 : 0);
+        if (!strcmp(s, "GREEN")) rc_led_set(RC_LED_GREEN, i ? 1 : 0);
+        else if (!strcmp(s, "RED")) rc_led_set(RC_LED_RED, i ? 1 : 0);
         else {
             Nan::ThrowTypeError("Wrong value (should be 'GREEN', "\
                     "or 'RED'");
             return;
         }
     }
-    
+
     struct Handoff {
         Nan::Callback *cb;
     };
-    
+
     static void doHandoff(uv_async_t* handle) {
         Nan::HandleScope scope;
         Handoff *h = static_cast<Handoff *>(handle->data);
 #ifdef DEBUG
-        fprintf(stderr, "Handoff %p using callback object %p to call %p\n", 
+        fprintf(stderr, "Handoff %p using callback object %p to call %p\n",
             (void *)h, (void *)h->cb, h->cb->GetFunction());
         fflush(stderr);
 #endif
@@ -202,9 +202,9 @@ namespace rc {
 #ifdef DEBUG
         fprintf(stderr, "Registered event %p " \
             "with C callback %p, handoff %p, callback object %p " \
-            "and C++ function %p using function %p\n", 
-            (void *)event, 
-            (void* )fp, (void *)h, h->cb, 
+            "and C++ function %p using function %p\n",
+            (void *)event,
+            (void* )fp, (void *)h, h->cb,
             h->cb->GetFunction(), (void *)set);
         fflush(stderr);
 #endif
@@ -224,8 +224,8 @@ namespace rc {
             if (info[1]->IsString()) {
                 v8::String::Utf8Value str(info[1]->ToString());
                 char * s = (char *)*str;
-                if (!strcmp(s, "FREE_SPIN")) rc_set_motor_free_spin(motor);
-                else if (!strcmp(s, "BRAKE")) rc_set_motor_brake(motor);
+                if (!strcmp(s, "FREE_SPIN")) rc_motor_free_spin(motor);
+                else if (!strcmp(s, "BRAKE")) rc_motor_brake(motor);
                 else {
                     Nan::ThrowTypeError("Wrong value for argument 1 "\
                         "(should be 'FREE_SPIN', 'BRAKE' or a numeric duty)");
@@ -233,7 +233,7 @@ namespace rc {
                 return;
             }
             float duty = (float)info[1]->ToNumber()->Value();
-            rc_set_motor(motor, duty);
+            rc_motor_set(motor, duty);
             return;
         }
         if (info.Length() != 1) {
@@ -247,10 +247,10 @@ namespace rc {
         if (info[0]->IsString()) {
             v8::String::Utf8Value str(info[0]->ToString());
             char * s = (char *)*str;
-            if (!strcmp(s, "ENABLE")) rc_enable_motors();
-            else if (!strcmp(s, "DISABLE")) rc_disable_motors();
-            else if (!strcmp(s, "FREE_SPIN")) rc_set_motor_free_spin_all();
-            else if (!strcmp(s, "BRAKE")) rc_set_motor_brake_all();
+            if (!strcmp(s, "ENABLE")) rc_motor_init();
+            else if (!strcmp(s, "DISABLE")) rc_motor_cleanup();
+            else if (!strcmp(s, "FREE_SPIN")) rc_motor_free_spin(0);
+            else if (!strcmp(s, "BRAKE")) rc_motor_brake(0);
             else {
                 Nan::ThrowTypeError("Wrong value (should be "\
                     "'ENABLE', 'DISABLE' "\
@@ -259,7 +259,7 @@ namespace rc {
             return;
         }
         float duty = (float)info[0]->ToNumber()->Value();
-        rc_set_motor_all(duty);
+        rc_motor_set(0,duty);
     }
 
     void RCencoder(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -278,7 +278,7 @@ namespace rc {
                 Nan::ThrowTypeError("Wrong value for argument 0 (should be 1 - 4)");
                 return;
             }
-            rc_set_encoder_pos(encoder, value);
+            rc_encoder_write(encoder, value);
             return;
         }
         if (info.Length() != 1) {
@@ -290,7 +290,7 @@ namespace rc {
             return;
         }
         int encoder = (int)info[0]->ToInt32()->Value();
-        int i = rc_get_encoder_pos(encoder);
+        int i = rc_encoder_read(encoder);
         info.GetReturnValue().Set(i);
     }
 
@@ -304,11 +304,12 @@ namespace rc {
             Nan::ThrowTypeError("Wrong type for argument (should be string or integer)");
             return;
         }
+        rc_adc_init();
         if (info[0]->IsString()) {
             v8::String::Utf8Value str(info[0]->ToString());
             char * s = (char *)*str;
-            if (!strcmp(s, "BATTERY")) value = rc_battery_voltage();
-            else if (!strcmp(s, "DC_JACK")) value = rc_dc_jack_voltage();
+            if (!strcmp(s, "BATTERY")) value = rc_adc_batt();
+            else if (!strcmp(s, "DC_JACK")) value = rc_adc_dc_jack();
             else {
                 Nan::ThrowTypeError("Wrong value (should be "\
                     "'BATTERY', 'DC_JACK' "\
@@ -325,9 +326,143 @@ namespace rc {
                 "0, 1, 2 or 3)");
             return;
         }
-        value = rc_adc_volt(adc);
+        value = rc_adc_read_volt(adc);
         info.GetReturnValue().Set(value);
     }
+
+    void RCservo(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        int result = 0;
+        if (info.Length() == 1) {
+            if (info[0]->IsString()) {
+                v8::String::Utf8Value str(info[0]->ToString());
+                char * s = (char *)*str;
+                if (!strcmp(s, "ENABLE")) rc_servo_init();
+                else if (!strcmp(s, "POWER_RAIL_ENABLE")) rc_servo_power_rail_en(1);
+                else if (!strcmp(s, "POWER_RAIL_DISABLE")) rc_servo_power_rail_en(0);
+                else if (!strcmp(s, "DISABLE")) rc_servo_cleanup();
+                else {
+                    Nan::ThrowTypeError("Wrong value (should be "\
+                        "'ENABLE', 'DISABLE' "\
+                        "'POWER_RAIL_ENABLE', 'POWER_RAIL_DISABLE' or a numeric channel no)");
+                }
+                return;
+            }
+            else {
+              Nan::ThrowTypeError("Wrong type for argument (should be String)");
+              return;
+            }
+        }
+        else {
+            if (!info[0]->IsInt32()) {
+                Nan::ThrowTypeError("Wrong type for argument (should be integer)");
+                return;
+            }
+            int channel = (int)info[0]->ToInt32()->Value();
+            float value = (float)info[1]->ToNumber()->Value();
+            if (channel < 0 || channel > 8) {
+                Nan::ThrowTypeError("Wrong value for argument 1 (should be between 0 and 8)");
+                return;
+            }
+            result = rc_servo_send_pulse_normalized(channel, value );
+            info.GetReturnValue().Set(result);
+      }
+    }
+
+    void RCbmp(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() != 1) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
+            return;
+        }
+        if (!info[0]->IsString()) {
+            Nan::ThrowTypeError("Wrong type for argument (should be string or integer)");
+            return;
+        }
+        else {
+
+            rc_bmp_data_t bmp_data;
+            v8::String::Utf8Value str(info[0]->ToString());
+            char * s = (char *)*str;
+            if (!strcmp(s, "ENABLE")) rc_bmp_init( BMP_OVERSAMPLE_1, BMP_FILTER_OFF);
+            else if (!strcmp(s, "DISABLE")) rc_bmp_power_off();
+            else if (!strcmp(s, "READ")) rc_bmp_read(&bmp_data);
+            else {
+                Nan::ThrowTypeError("Wrong value (should be "\
+                    "'ENABLE', 'DISABLE' "\
+                    " or 'READ' )");
+                return;
+            }
+            v8::Local<v8::Object> bmpObject = Nan::New<v8::Object>();
+            v8::Local<v8::String> TempProp = Nan::New("temp_c").ToLocalChecked();
+            v8::Local<v8::String> AltProp = Nan::New("alt_m").ToLocalChecked();
+            v8::Local<v8::String> PressureProp = Nan::New("pressure_pa").ToLocalChecked();
+            v8::Local<v8::Value> TempValue = Nan::New(bmp_data.temp_c);
+            v8::Local<v8::Value> AltValue = Nan::New(bmp_data.alt_m);
+            v8::Local<v8::Value> PressureValue = Nan::New(bmp_data.pressure_pa);
+            Nan::Set(bmpObject, TempProp, TempValue);
+            Nan::Set(bmpObject, AltProp, AltValue);
+            Nan::Set(bmpObject, PressureProp, PressureValue);
+            info.GetReturnValue().Set(bmpObject);
+        }
+    }
+    rc_mpu_data_t mpu_data;
+    void RCimu(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+        if (info.Length() != 1) {
+            Nan::ThrowTypeError("Wrong number of arguments (should be 1)");
+            return;
+        }
+        if (!info[0]->IsString()) {
+            Nan::ThrowTypeError("Wrong type for argument (should be string)");
+            return;
+        }
+        else {
+            rc_mpu_config_t conf = rc_mpu_default_config();
+            conf.enable_magnetometer = 1;
+            v8::String::Utf8Value str(info[0]->ToString());
+            char * s = (char *)*str;
+            if (!strcmp(s, "ENABLE")) rc_mpu_initialize(&mpu_data, conf);
+            else if (!strcmp(s, "DISABLE")) rc_mpu_power_off();
+            else if (!strcmp(s, "READ_ACCEL")) rc_mpu_read_accel(&mpu_data);
+            else if (!strcmp(s, "READ_GYRO")) rc_mpu_read_gyro(&mpu_data);
+            else if (!strcmp(s, "READ_MAG")) rc_mpu_read_mag(&mpu_data);
+            else if (!strcmp(s, "READ_TEMP")) rc_mpu_read_temp(&mpu_data);
+            else if (!strcmp(s, "READ_ALL") || !strcmp(s, "READ")){
+                rc_mpu_read_accel(&mpu_data);
+                rc_mpu_read_gyro(&mpu_data);
+                rc_mpu_read_mag(&mpu_data);
+                rc_mpu_read_temp(&mpu_data);
+            }
+            else {
+                Nan::ThrowTypeError("Wrong value (should be "\
+                    "'ENABLE', 'DISABLE' "\
+                    "'READ_ACCEL' 'READ_GYRO' 'READ_TEMP' 'READ_MAG' or 'READ_ALL' )");
+                return;
+            }
+
+            v8::Local<v8::Object> mpuObject = Nan::New<v8::Object>();
+            v8::Local<v8::String> AccelProp = Nan::New("accel").ToLocalChecked();
+            v8::Local<v8::String> GyroProp = Nan::New("gyro").ToLocalChecked();
+            v8::Local<v8::String> MagProp = Nan::New("mag").ToLocalChecked();
+            v8::Local<v8::String> TempProp = Nan::New("temp").ToLocalChecked();
+            v8::Local<v8::Array> AccelValue = Nan::New<v8::Array>(3);
+            Nan::Set(AccelValue, 0, Nan::New(mpu_data.accel[0]));
+            Nan::Set(AccelValue, 1, Nan::New(mpu_data.accel[1]));
+            Nan::Set(AccelValue, 2, Nan::New(mpu_data.accel[2]));
+            v8::Local<v8::Array> GyroValue = Nan::New<v8::Array>(3);
+            Nan::Set(GyroValue, 0, Nan::New(mpu_data.gyro[0]));
+            Nan::Set(GyroValue, 1, Nan::New(mpu_data.gyro[1]));
+            Nan::Set(GyroValue, 2, Nan::New(mpu_data.gyro[2]));
+            v8::Local<v8::Array> MagValue = Nan::New<v8::Array>(3);
+            Nan::Set(MagValue, 0, Nan::New(mpu_data.mag[0]));
+            Nan::Set(MagValue, 1, Nan::New(mpu_data.mag[1]));
+            Nan::Set(MagValue, 2, Nan::New(mpu_data.mag[2]));
+            v8::Local<v8::Value> TempValue = Nan::New(mpu_data.temp);
+            Nan::Set(mpuObject, AccelProp, AccelValue);
+            Nan::Set(mpuObject, GyroProp, GyroValue);
+            Nan::Set(mpuObject, MagProp, MagValue);
+            Nan::Set(mpuObject, TempProp, TempValue);
+            info.GetReturnValue().Set(mpuObject);
+    }
+  }
 
     void ModuleInit(v8::Local<v8::Object> exports) {
         /* Init and Cleanup */
@@ -351,6 +486,17 @@ namespace rc {
         /* ADC */
         exports->Set(Nan::New("adc").ToLocalChecked(),
             Nan::New<v8::FunctionTemplate>(RCadc)->GetFunction());
+        /* Servo */
+        exports->Set(Nan::New("servo").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCservo)->GetFunction());
+        /* BMP */
+        exports->Set(Nan::New("bmp").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCbmp)->GetFunction());
+        /* IMU */
+        exports->Set(Nan::New("imu").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCimu)->GetFunction());
+        exports->Set(Nan::New("mpu").ToLocalChecked(),
+            Nan::New<v8::FunctionTemplate>(RCimu)->GetFunction());
         node::AtExit(RCexit);
     }
 
